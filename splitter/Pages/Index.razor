@@ -1,9 +1,48 @@
-﻿@page "/"
+@page "/"
+@using System.IO
 
-<PageTitle>Index</PageTitle>
+<PageTitle>Media Browser</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Media Browser</h1>
 
-Welcome to your new app.
+@if (files.Length == 0)
+{
+    <p>No .mkv files found in /media</p>
+}
+else
+{
+    <ul>
+        @foreach (var file in files)
+        {
+            var name = Path.GetFileName(file);
+            <li><a href="#" @onclick="() => SelectFile(name)">@name</a></li>
+        }
+    </ul>
+}
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+@if (!string.IsNullOrEmpty(selectedFile))
+{
+    <h2>Playing: @selectedFile</h2>
+    <video width="640" controls>
+        <source src="@($"/media/{selectedFile}")" type="video/x-matroska" />
+        Your browser does not support the video tag.
+    </video>
+}
+
+@code {
+    private string[] files = Array.Empty<string>();
+    private string? selectedFile;
+
+    protected override void OnInitialized()
+    {
+        if (Directory.Exists("/media"))
+        {
+            files = Directory.GetFiles("/media", "*.mkv");
+        }
+    }
+
+    private void SelectFile(string file)
+    {
+        selectedFile = file;
+    }
+}
