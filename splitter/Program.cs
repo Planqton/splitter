@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.StaticFiles;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,10 +28,14 @@ app.UseStaticFiles();
 var mediaPath = "/media";
 if (Directory.Exists(mediaPath))
 {
+    var provider = new FileExtensionContentTypeProvider();
+    provider.Mappings[".mkv"] = "video/x-matroska";
+    provider.Mappings[".avi"] = "video/x-msvideo";
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new PhysicalFileProvider(mediaPath),
-        RequestPath = "/media"
+        RequestPath = "/media",
+        ContentTypeProvider = provider
     });
 }
 

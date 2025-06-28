@@ -36,7 +36,7 @@
 {
     <h4>Playing: @Path.GetFileName(selectedFile)</h4>
     <video width="640" controls>
-        <source src="@FileUrl(selectedFile)" type="video/mp4" />
+        <source src="@FileUrl(selectedFile)" type="@VideoMimeType(selectedFile)" />
         Your browser does not support the video tag.
     </video>
 }
@@ -105,5 +105,17 @@
     {
         var relative = Path.GetRelativePath("/media", file).Replace("\\", "/");
         return $"/media/{relative}";
+    }
+
+    private string VideoMimeType(string file)
+    {
+        var ext = Path.GetExtension(file).ToLowerInvariant();
+        return ext switch
+        {
+            ".mkv" => "video/x-matroska",
+            ".avi" => "video/x-msvideo",
+            ".mp4" => "video/mp4",
+            _ => "application/octet-stream"
+        };
     }
 }
