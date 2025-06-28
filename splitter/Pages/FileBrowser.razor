@@ -1,0 +1,108 @@
+@page "/files"
+@using System.IO
+
+<PageTitle>File Browser</PageTitle>
+
+<h3>File Browser</h3>
+
+<p>Current directory: @currentDir</p>
+<input @bind="searchTerm" placeholder="Search" class="form-control" />
+<button class="btn btn-primary mt-2" @onclick="LoadEntries">Search</button>
+<button class="btn btn-secondary mt-2 ms-2" @onclick="GoUp" disabled="@IsRoot">Up</button>
+
+<ul class="list-unstyled mt-3">
+    @foreach (var dir in directories)
+    {
+        <li>
+            <a href="#" @onclick="() => OpenDir(dir)">
+                <span class="oi oi-folder" aria-hidden="true"></span>
+                @Path.GetFileName(dir)
+            </a>
+        </li>
+    }
+    @foreach (var file in files)
+    {
+        <li>
+            <a href="#" @onclick="() => PlayFile(file)">
+                <span class="oi oi-media-play" aria-hidden="true"></span>
+                @Path.GetFileName(file)
+            </a>
+        </li>
+    }
+</ul>
+
+@if (selectedFile != null)
+{
+    <h4>Playing: @Path.GetFileName(selectedFile)</h4>
+    <video width="640" controls>
+        <source src="@FileUrl(selectedFile)" type="video/mp4" />
+        Your browser does not support the video tag.
+    </video>
+}
+
+@code {
+    private string currentDir = "/media";
+    private string searchTerm = string.Empty;
+    private List<string> directories = new();
+    private List<string> files = new();
+    private string? selectedFile;
+
+    protected override void OnInitialized()
+    {
+        LoadEntries();
+    }
+
+    private void LoadEntries()
+    {
+        if (!Directory.Exists(currentDir))
+        {
+            directories.Clear();
+            files.Clear();
+            return;
+        }
+
+        directories = Directory.GetDirectories(currentDir).ToList();
+        files = Directory.GetFiles(currentDir)
+            .Where(f => IsVideoFile(f) &&
+                        (string.IsNullOrEmpty(searchTerm) || Path.GetFileName(f).Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+    }
+
+    private bool IsVideoFile(string path)
+    {
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        return ext == ".mkv" || ext == ".avi" || ext == ".mp4";
+    }
+
+    private void OpenDir(string dir)
+    {
+        currentDir = dir;
+        selectedFile = null;
+        searchTerm = string.Empty;
+        LoadEntries();
+    }
+
+    private void GoUp()
+    {
+        var parent = Directory.GetParent(currentDir);
+        if (parent != null && parent.Exists && parent.FullName.StartsWith("/media"))
+        {
+            currentDir = parent.FullName;
+            selectedFile = null;
+            LoadEntries();
+        }
+    }
+
+    private bool IsRoot => Path.GetFullPath(currentDir).TrimEnd('/') == "/media";
+
+    private void PlayFile(string file)
+    {
+        selectedFile = file;
+    }
+
+    private string FileUrl(string file)
+    {
+        var relative = Path.GetRelativePath("/media", file).Replace("\\", "/");
+        return $"/media/{relative}";
+    }
+}
